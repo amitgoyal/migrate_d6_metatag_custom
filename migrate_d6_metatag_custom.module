@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Contains migrate_d6_metatag_custom.module.
+ */
+
+use Drupal\migrate\Entity\MigrationInterface;
+use Drupal\migrate\Plugin\MigrateSourceInterface;
+use Drupal\migrate\Row;
+
+/**
+ * Implements hook_migrate_prepare_row().
+ */
+function migrate_d6_metatag_custom_migrate_prepare_row(Row $row, MigrateSourceInterface $source, MigrationInterface $migration) {
+  // ID from the migrate.migration.d6_node__page_custom.yml.
+  if ($migration->id() == 'd6_node__page_custom') {
+    // In D6, Nodewords type node is denoted by 5.
+    $query = $source->getDatabase()->select('nodewords', 'nw')
+      ->fields('nw', array('name', 'content'))
+      ->condition('type', 5)
+      ->condition('id', $row->getSourceProperty('nid'));
+    $mt_results = $query->execute()->fetchAllKeyed();
+
+    $metatags = array();
+    foreach ($mt_results as $mt_name => $mt_content) {
+      $metatags[$mt_name] = unserialize($mt_content);
+    }
+    $row->setSourceProperty('field_metatag', serialize($metatags));
+  }
+}
